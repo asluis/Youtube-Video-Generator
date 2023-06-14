@@ -1,0 +1,7 @@
+# IDE files
+*.idea*
+
+
+# Prototyping on localhost
+*protype*
+prototypes

@@ -1,0 +1,13 @@
+schedule:
+  - minute: "0"
+    hour: "12"
+    day: "*"
+    month: "*"
+    day_of_week: "*"
+    subreddits:
+      - all
+      - csMajors
+      - cscareerquestions
+      - leagueoflegends
+      - iOSProgramming
+      - FirstTimeHomeBuyer
