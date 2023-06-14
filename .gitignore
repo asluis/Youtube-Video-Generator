@@ -2,7 +2,8 @@
 *.idea*
 
 # pipenv
-*Pipfile
+Pipfile
+Pipfile.lock
 
 
 # Prototyping on localhost
