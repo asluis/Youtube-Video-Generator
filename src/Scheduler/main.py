@@ -1,15 +1,12 @@
 from crontab import CronTab
 import yaml
-import os
 import sys
-import requests
-import json
 import pika
 
-"""
+'''
 Reading through the config.yaml file for a schedule and a list of subreddits that will be processed
 following that schedule.
-"""
+'''
 def loadConfig() -> dict:
     config = None
     try:
@@ -23,11 +20,17 @@ def loadConfig() -> dict:
     return config
 
 
+'''
+For each schedule this will create a cronjob that will call main.py (this file) and pass to it
+the subreddits found in the yaml config as parameters.
+'''
 def addCronJob(schedule: dict) -> None:
-    cron = CronTab(user='root')  # Assumes Linux OS
+    #  TODO: Consider changing user to something else so it does not require sudo access
+    cron = CronTab(user='luis')  # Assumes Linux OS
 
-    data = str(schedule['subreddits'])
-    job = cron.new(command=f"python3 {os.path.abspath(__file__)} {data}")
+    subreddits = str.join(',', schedule['subreddits'])
+    #  Create cron job and pass the subreddits as an argument
+    job = cron.new(command=f"python3 {__file__} {subreddits}")
 
     minute = schedule['minute']
     hour = schedule['hour']
@@ -39,6 +42,9 @@ def addCronJob(schedule: dict) -> None:
     cron.write()
 
 
+'''
+Iterates through the list of schedules extracted from loadConfig and adds each schedule as a cron job
+'''
 def processSchedules() -> None:
     schedules = loadConfig()['schedule']
 
@@ -48,10 +54,19 @@ def processSchedules() -> None:
 
 if __name__ == "__main__":
     #  Make a call to fetch node to fetch data for these subreddits
-    if sys.argv[1] is not None:
-        data = json.loads(sys.argv[1])
+    if len(sys.argv) == 2:
+        #  This is the argument execution of main.py, which will be what the cronjob executes
+        data = sys.argv[1]
 
-
-
-
-
+        # Establishing connection to rabbitmq
+        connection = pika.BlockingConnection(pika.ConnectionParameters("localhost"))
+        channel = connection.channel()
+        #  Declaring a q
+        channel.queue_declare(queue="subreddits")
+        #  Publishing a message to q
+        channel.basic_publish(exchange='', routing_key='subreddits', body=data)
+        #  Close conn.
+        connection.close()
+    else:
+        #  This is the standard execution of main.py, which is what the user must execute initially
+        processSchedules()

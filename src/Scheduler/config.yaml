@@ -1,6 +1,6 @@
 schedule:
-  - minute: "0"
-    hour: "12"
+  - minute: "*"
+    hour: "*"
     day: "*"
     month: "*"
     day_of_week: "*"
