@@ -3,7 +3,6 @@ import yaml
 import sys
 import pika
 
-#  TODO: create init.sh to install all necessary packages from requirements.txt + call main.py so cronjob does not fail
 
 '''
 Reading through the config.yaml file for a schedule and a list of subreddits that will be processed
@@ -27,7 +26,7 @@ For each schedule this will create a cronjob that will call main.py (this file) 
 the subreddits found in the yaml config as parameters.
 '''
 def addCronJob(schedule: dict) -> None:
-    #  TODO: Consider changing user to something else so it does not require sudo access
+    #  TODO: Consider changing user to something else so it does not require sudo access. Do so in init.sh
     cron = CronTab(user='luis')  # Assumes Linux OS
 
     subreddits = str.join(',', schedule['subreddits'])
