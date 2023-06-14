@@ -1,6 +1,9 @@
 # IDE files
 *.idea*
 
+# pipenv
+*Pipfile
+
 
 # Prototyping on localhost
 *protype*

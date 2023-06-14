@@ -3,6 +3,8 @@ import yaml
 import sys
 import pika
 
+#  TODO: create init.sh to install all necessary packages from requirements.txt + call main.py so cronjob does not fail
+
 '''
 Reading through the config.yaml file for a schedule and a list of subreddits that will be processed
 following that schedule.
