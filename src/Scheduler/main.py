@@ -55,7 +55,7 @@ def processSchedules() -> None:
 
 if __name__ == "__main__":
     #  Make a call to fetch node to fetch data for these subreddits
-    if len(sys.argv) == 2:
+    if len(sys.argv) == 2:  # TODO: Add a nsfw_allowed flag for each batch of subreddits in YAML
         #  This is the argument execution of main.py, which will be what the cronjob executes
         data = sys.argv[1]
 
