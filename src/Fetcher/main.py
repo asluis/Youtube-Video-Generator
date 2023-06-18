@@ -7,8 +7,8 @@ import json
 Fetches data from Reddit's .json API and applies two query parameters: sorting and timeframe. The sort is set to 
 top and timeframe is set to day (today). 
 
-param - subreddit: subreddit to fetch data for
-param - nsfw_allowed: determined whether nsfw posts are considered
+subreddit: subreddit to fetch data for
+nsfw_allowed: determined whether nsfw posts are considered
 '''
 def fetchData(subreddit: str, nsfw_allowed: bool = False) -> None:
     reddit_api = f"https://www.reddit.com/r/{subreddit}.json?sort=top?t=day"
@@ -29,6 +29,11 @@ def fetchData(subreddit: str, nsfw_allowed: bool = False) -> None:
         print(f"Error fetching data. Response code is {response.status_code}")
 
 
+'''
+Saves the desired fields of the dictionary (denoted in desired_data) into a new dictionary.
+nsfw_allowed will not process the post if it's set to false. post_count denotes how many posts we want to grab from
+the api call.
+'''
 def extract_data(datasrc, post_count = 1, desired_data=None, nswf_allowed: bool = False) -> dict:
     if desired_data is None:
         desired_data = ['title', 'url', 'is_video', 'score', 'num_comments', 'view_count', 'ups', 'downs',
@@ -46,6 +51,10 @@ def extract_data(datasrc, post_count = 1, desired_data=None, nswf_allowed: bool 
     return data
 
 
+'''
+Connects to a RabbitMQ channel and creates the binds to the imageWorker and audioWorker queues. Serializes data
+and sends to those channels.
+'''
 def sendData(data: dict) -> None:
     connection = pika.BlockingConnection(pika.ConnectionParameters("localhost"))
     channel = connection.channel()
@@ -60,4 +69,24 @@ def sendData(data: dict) -> None:
     connection.close()
 
 
+'''
+Decodes bytes into string and splits the string into an array using ',' as delimiter. See Scheduler node for
+more info on the subreddit queue's data.
+'''
+def processSubreddits(ch, method, properties, body) -> None:
+    subreddits = body.decode()
+    subreddits = subreddits.split(',')
+
+    for sub in subreddits:
+        fetchData(sub)
+
+
 if __name__ == '__main__':
+    connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+    channel = connection.channel()
+
+    channel.queue_declare('subreddits')
+
+    channel.basic_consume(queue='subreddits', on_message_callback=processSubreddits, auto_ack=True)
+    print("here")
+    channel.start_consuming()
