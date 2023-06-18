@@ -1,5 +1,6 @@
 import pika
 import requests
+import json
 
 
 def fetchData(subreddit: str, nsfw_allowed: bool = False) -> None:
@@ -41,12 +42,11 @@ def sendData(data: dict) -> None:
     channel.queue_declare(queue="imageWorker")
     channel.queue_declare(queue="audioWorker")
 
-    #  TODO: Might need to serialize dict data prior to sending to queues
-    channel.basic_publish(exchange='', routing_key='imageWorker', body=data)
-    channel.basic_publish(exchange='', routing_key='audioWorker', body=data)
+    #  Consumer has to deserialize because producer (fetcher) serialized data
+    channel.basic_publish(exchange='', routing_key='imageWorker', body=json.dumps(data))
+    channel.basic_publish(exchange='', routing_key='audioWorker', body=json.dumps(data))
     #  Close conn.
     connection.close()
-
 
 
 if __name__ == '__main__':
