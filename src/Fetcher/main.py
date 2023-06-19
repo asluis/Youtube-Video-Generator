@@ -21,7 +21,7 @@ def fetchData(subreddit: str, nsfw_allowed: bool = False) -> None:
     if response.status_code == 200:
         print(f"Success fetching data for {subreddit}")
 
-        data = json.loads(response.json())  # Deserialize data
+        data = response.json()  # Deserialize data
         data = extract_data(data)
         sendData(data)
 
@@ -88,5 +88,4 @@ if __name__ == '__main__':
     channel.queue_declare('subreddits')
 
     channel.basic_consume(queue='subreddits', on_message_callback=processSubreddits, auto_ack=True)
-    print("here")
     channel.start_consuming()
