@@ -100,4 +100,4 @@ if __name__ == '__main__':
     channel.queue_declare('subreddits')
 
     channel.basic_consume(queue='subreddits', on_message_callback=processSubreddits, auto_ack=True)
-    channel.start_consuming()
+    channel.start_consuming()  # Looping call to receive data from queue
