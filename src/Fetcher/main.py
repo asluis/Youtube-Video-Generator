@@ -33,17 +33,29 @@ def fetchData(subreddit: str, nsfw_allowed: bool = False) -> None:
 Saves the desired fields of the dictionary (denoted in desired_data) into a new dictionary.
 nsfw_allowed will not process the post if it's set to false. post_count denotes how many posts we want to grab from
 the api call.
+
+Extracts data from the results of an API call for one particular subreddit at a time.
+
+This is a recursive function that will skip over all mod stickied posts by recursively incrementing the post_count
+and start parameters. Post count indicates the number of posts to grab and start indicates which post to start
+processing from.
 '''
-def extract_data(datasrc, post_count = 1, desired_data=None, nswf_allowed: bool = False) -> dict:
+def extract_data(datasrc: dict, post_count: int = 1, desired_data=None,
+                 nswf_allowed: bool = False, start: int = 0) -> dict:
     if desired_data is None:
         desired_data = ['title', 'url', 'is_video', 'score', 'num_comments', 'view_count', 'ups', 'downs',
-                        'selftext', 'over_18', 'author_fullname']
+                        'selftext', 'over_18', 'author_fullname', 'stickied']
 
     data = {}
 
-    for i in range(0, post_count):
+    for i in range(start, post_count):
+        #  Skip all stickied posts
+        if datasrc['data']['children'][i]['data']['stickied'] is True:
+            return extract_data(datasrc, post_count=post_count + 1, desired_data=desired_data,
+                                nswf_allowed=nswf_allowed, start=start + 1)
+
         for e in desired_data:
-            if e == 'over_18' and not nswf_allowed:
+            if e == 'over_18' and datasrc['data']['children'][i]['data'][e] and not nswf_allowed:
                 continue
             print(f"{e}: {datasrc['data']['children'][i]['data'][e]}")
             data[e] = datasrc['data']['children'][i]['data'][e]
