@@ -59,6 +59,8 @@ def extract_data(datasrc: dict, post_count: int = 1, desired_data=None,
                 continue
             print(f"{e}: {datasrc['data']['children'][i]['data'][e]}")
             data[e] = datasrc['data']['children'][i]['data'][e]
+        
+    data['desired_data'] = desired_data
 
     return data
 
