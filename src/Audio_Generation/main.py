@@ -6,14 +6,17 @@ import time
 
 '''
 This code uses coqui-ai/TTS from github: https://github.com/coqui-ai/TTS
-
 It has many models available that change how the voice sounds.
 '''
 
+'''
+Instantiates the TTS model tacotron2 in English and feeds it the selftext from the reddit post, thus generating
+an audio .mp3 file with the post's contents read by the model. The naming convention of the file created is
+<reddit_defined_username><hour_minute_second>.mp3
+'''
 def generateAudio(ch, method, properties, body) -> None:
     data = json.loads(body.decode())
-    print(f"type of data is {type(data)}")
-    print(f"Data decoded: {data}")
+
     print(f"Picked up data. Self text is: {data['selftext']}")
     model_name = 'tts_models/en/ek1/tacotron2'
 
@@ -31,6 +34,11 @@ def generateAudio(ch, method, properties, body) -> None:
     tts.tts_to_file(text=data['selftext'], file_path=file_name)
     print(f"Done creating {file_name}")
 
+
+'''
+Standard queue consumption using RabbitMQ. Includes a failsafe due to channel losing stream connection with 
+RabbitMQ instance, which will re-establish connection recursively.
+'''
 def consume_messages():
     connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
 
