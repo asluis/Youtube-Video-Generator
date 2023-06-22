@@ -2,16 +2,17 @@ import pika
 import requests
 import json
 
+post_fetch_count = 100
 
 '''
 Fetches data from Reddit's .json API and applies two query parameters: sorting and timeframe. The sort is set to 
-top and timeframe is set to day (today). 
+top and timeframe is set to day (today). Grabs the top post_fetch_count number of posts for the day.
 
 subreddit: subreddit to fetch data for
 nsfw_allowed: determined whether nsfw posts are considered
 '''
 def fetchData(subreddit: str, nsfw_allowed: bool = False) -> None:
-    reddit_api = f"https://www.reddit.com/r/{subreddit}.json?sort=top?t=day"
+    reddit_api = f"https://www.reddit.com/r/{subreddit}.json?sort=top?t=day?limit={post_fetch_count}"
 
     #  TODO: Issue could be here if reddit API bans this user agent. Fix is to simply change the version portion of the string.
     headers = {'User-agent': 'Youtube_Video_Automator/0.0.1'}
@@ -24,7 +25,7 @@ def fetchData(subreddit: str, nsfw_allowed: bool = False) -> None:
         data = response.json()  # Deserialize data
         data = extract_data(data)
 
-        if data['selftext'] == "":
+        if data is None:
             print(f"No text available. Skipping for {subreddit}")
             return
 
@@ -47,15 +48,21 @@ processing from.
 '''
 def extract_data(datasrc: dict, post_count: int = 1, desired_data=None,
                  nswf_allowed: bool = False, start: int = 0) -> dict:
+
     if desired_data is None:
         desired_data = ['title', 'url', 'is_video', 'score', 'num_comments', 'view_count', 'ups', 'downs',
                         'selftext', 'over_18', 'author_fullname', 'stickied']
 
     data = {}
 
+    #  Returning null if we iterated through all posts we fetched.
+    if start > post_fetch_count:
+        return None
+
     for i in range(start, post_count):
         #  Skip all stickied posts
-        if datasrc['data']['children'][i]['data']['stickied'] is True:
+        if datasrc['data']['children'][i]['data']['stickied'] is True \
+                or datasrc['data']['children'][i]['data']['selftext'] == '':  # Skip posts w/o selftext
             return extract_data(datasrc, post_count=post_count + 1, desired_data=desired_data,
                                 nswf_allowed=nswf_allowed, start=start + 1)
 
