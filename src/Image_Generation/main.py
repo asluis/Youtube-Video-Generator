@@ -1,9 +1,29 @@
-from diffusers import DiffusionPipeline
+from diffusers import StableDiffusionPipeline
 import pika
 import time
+import json
+from datetime import datetime
 
-def generateImage():
-    pass
+'''
+To make this program work, you have to have a local version of the Stable Diffusion repository.
+'''
+
+'''
+Instantiates the model and feeds it the post's selftext to be used to generate an image. Generates a 
+.png file using the poster's reddit-defined username along with the current hour_minute_second.
+'''
+def generateImage(ch, method, properties, body) -> None:
+    data = json.loads(body.decode())
+    image_text = data['selftext']
+
+    ch.basic_ack(delivery_tag=method.delivery_tag)
+    pipe = StableDiffusionPipeline.from_pretrained("./stable-diffusion-v1-5")
+    image = pipe(image_text).images[0]
+
+    file_name = f"{data['author_fullname']}{datetime.now().strftime('%H_%M_%S')}.png"
+    print(f"File name is {file_name}")
+
+    image.save(file_name)
 
 
 '''
@@ -15,9 +35,9 @@ def consume_messages():
 
     channel = connection.channel()
 
-    channel.queue_declare('audioWorker')
+    channel.queue_declare('imageWorker')
     channel.basic_qos(prefetch_count=1)
-    channel.basic_consume(queue='audioWorker', on_message_callback=generateImage, auto_ack=False)
+    channel.basic_consume(queue='imageWorker', on_message_callback=generateImage, auto_ack=False)
     print("Starting to consume...")
     try:
         channel.start_consuming()
