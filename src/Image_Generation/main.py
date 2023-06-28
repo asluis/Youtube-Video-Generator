@@ -17,7 +17,7 @@ def generateImage(ch, method, properties, body) -> None:
     image_text = data['selftext']
 
     ch.basic_ack(delivery_tag=method.delivery_tag)
-    pipe = StableDiffusionPipeline.from_pretrained("./stable-diffusion-v1-5")
+    pipe = StableDiffusionPipeline.from_pretrained("runwayml/stable-diffusion-v1-5")
     image = pipe(image_text).images[0]
 
     file_name = f"{data['author_fullname']}{datetime.now().strftime('%H_%M_%S')}.png"
