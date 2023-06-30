@@ -1,4 +1,4 @@
-from diffusers import StableDiffusionPipeline
+from diffusers import DiffusionPipeline
 import pika
 import time
 import json
@@ -17,7 +17,9 @@ def generateImage(ch, method, properties, body) -> None:
     image_text = data['selftext']
 
     ch.basic_ack(delivery_tag=method.delivery_tag)
-    pipe = StableDiffusionPipeline.from_pretrained("runwayml/stable-diffusion-v1-5")
+    pipe = DiffusionPipeline.from_pretrained("./stable-diffusion-v1-5")
+    pipe = pipe.to('mps')
+    pipe.enable_attention_slicing()
     image = pipe(image_text).images[0]
 
     file_name = f"{data['author_fullname']}{datetime.now().strftime('%H_%M_%S')}.png"
