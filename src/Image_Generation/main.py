@@ -51,6 +51,10 @@ def consume_messages():
         consume_messages()  # Recursively call the function to reconnect
     except KeyboardInterrupt:
         channel.stop_consuming()
+    except (Exception,):
+        print("Connection lost. Reconnecting...")
+        time.sleep(5)  # Delay before attempting reconnection
+        consume_messages()  # Recursively call the function to reconnect
 
     connection.close()
 
