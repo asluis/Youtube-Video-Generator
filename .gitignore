@@ -8,9 +8,12 @@ Pipfile.lock
 
 # Prototyping on localhost
 *protype*
-prototypes
+prototypesßßß
 
 # Testing Artifacts
 *.mp3
 *.mp4
 *.png
+
+# Internet Models, installed by the init.sh script of the nodes that use it
+src/Image_Generation/stable-diffusion-v1-5
