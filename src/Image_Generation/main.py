@@ -43,15 +43,11 @@ def consume_messages():
     print("Starting to consume...")
     try:
         channel.start_consuming()
-    except pika.exceptions.StreamLostError:
-        # Connection was lost
-        # Attempt reconnection after a delay
-        print("Connection lost. Reconnecting...")
-        time.sleep(5)  # Delay before attempting reconnection
-        consume_messages()  # Recursively call the function to reconnect
     except KeyboardInterrupt:
         channel.stop_consuming()
     except (Exception,):
+        # Connection was lost
+        # Attempt reconnection after a delay
         print("Connection lost. Reconnecting...")
         time.sleep(5)  # Delay before attempting reconnection
         consume_messages()  # Recursively call the function to reconnect
