@@ -1,5 +1,5 @@
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from sqlalchemy import BLOB, VARCHAR
+from sqlalchemy import BLOB, VARCHAR, select
 import pika
 import time
 import json
@@ -11,7 +11,7 @@ Database must contain (id, selftext, image, audio) pairing of each post processe
 particular post.
 
 This post ID will be used as a correlation ID for metadata db's queries and responses using RabbitMQ. If the ID
-is already taken, simply have the metadata DB change it to a unique ID and store it. 
+is already taken, simply have the metadata DB change it to a unique ID and store it. Update: ID is now URL for post.
 '''
 
 class Base(DeclarativeBase):
@@ -20,20 +20,34 @@ class Base(DeclarativeBase):
 class Post(Base):
     __tablename__ = 'Posts'
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[str] = mapped_column(VARCHAR(256), primary_key=True)
     title: Mapped[str] = mapped_column(VARCHAR(128))
     image = mapped_column(BLOB, nullable=True)
     audio = mapped_column(BLOB, nullable=True)
 
 
 def populate_database(ch, method, properties, body) -> None:
-    data = json.loads(body.decode())
-    # TODO: Complete implementation. Make sure unique ID is used.
+    data = json.loads(body.decode())  # We will ALWAYS only have either the image OR the audio, not both at same time
+    post_id = data['id']
+
+    post = get_post(post_id)
+
+    if post is None:
+        new_post = Post(id=id, title=data['title'], image=data['image'], audio=data['audio'])
+        session.add(new_post)
+    else:
+        if data['image'] is not None:  # Do we have an image? Else we can assume we have audio.
+            post.image = data['image']
+        else:
+            post.audio = data['audio']
+
+    session.commit()
 
 
-def unique_id(post_id: int) -> int:
-    # TODO: Implement. Checks if passed ID is unique; if not, regenerates a unique ID.
-    pass
+def get_post(post_id: str) -> Post:
+    query = select(Post).where(Post.id.is_(post_id))
+
+    return session.scalars(query).one()
 
 def consume_messages():
     connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
