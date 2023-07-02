@@ -26,6 +26,10 @@ class Post(Base):
     audio = mapped_column(BLOB, nullable=True)
 
 
+'''
+Populates the database with post data from queue. Since each entry in queue will only hold EITHER audio OR image 
+data, this function will check whether the post exists in the DB and handle either case accordingly.
+'''
 def populate_database(ch, method, properties, body) -> None:
     data = json.loads(body.decode())  # We will ALWAYS only have either the image OR the audio, not both at same time
     post_id = data['id']
@@ -43,20 +47,30 @@ def populate_database(ch, method, properties, body) -> None:
 
     session.commit()
 
+# TODO: Post DB entries that are complete into a new queue for movie nodes to access.
 
+
+'''
+Returns the post associated with the post_id or returns None if DNE.
+'''
 def get_post(post_id: str) -> Post:
     query = select(Post).where(Post.id.is_(post_id))
 
     return session.scalars(query).one()
 
+
+'''
+Standard queue consumption using RabbitMQ. Includes a failsafe due to channel losing stream connection with 
+RabbitMQ instance, which will re-establish connection recursively.
+'''
 def consume_messages():
     connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
 
     channel = connection.channel()
 
-    channel.queue_declare('videoWorker')
+    channel.queue_declare('metadataWorker')
     channel.basic_qos(prefetch_count=1)
-    channel.basic_consume(queue='videoWorker', on_message_callback=populate_database, auto_ack=False)
+    channel.basic_consume(queue='metadataWorker', on_message_callback=populate_database, auto_ack=False)
     print("Starting to consume...")
 
     try:
@@ -74,6 +88,5 @@ def consume_messages():
 
 
 if __name__ == '__main__':
-    Base.metadata.create_all(engine)
-
+    Base.metadata.create_all(engine)  # Create the tables in the underlying DB
     consume_messages()
