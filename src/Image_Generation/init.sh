@@ -17,5 +17,5 @@ git lfs install
 git clone https://huggingface.co/runwayml/stable-diffusion-v1-5
 echo "Complete."
 sudo chmod +x main.py
-sudo python3.10 main.py
 echo "Successfully initialized Image Worker"
+sudo python3.10 main.py

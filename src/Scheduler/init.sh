@@ -10,5 +10,5 @@ apt install python3-pip
 apt install python3
 pip3 install -r requirements.txt
 chmod +x main.py
-python3 main.py
 echo "successfully initialized Fetcher"
+python3 main.py
