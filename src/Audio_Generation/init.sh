@@ -3,7 +3,8 @@
 # Assumes init.sh has root privileges
 
 set -e
-
+sudo apt update
+sudo apt upgrade
 sudo add-apt-repository ppa:deadsnakes/ppa
 sudo apt-get update
 sudo apt-get install python3.10
