@@ -22,6 +22,7 @@ class Post(Base):
 
     id: Mapped[str] = mapped_column(VARCHAR(256), primary_key=True)
     title: Mapped[str] = mapped_column(VARCHAR(128))
+    selftext: Mapped[str] = mapped_column(VARCHAR(1024))
     image = mapped_column(BLOB, nullable=True)
     audio = mapped_column(BLOB, nullable=True)
 
@@ -37,7 +38,7 @@ def populate_database(ch, method, properties, body) -> None:
     post = get_post(post_id)
 
     if post is None:
-        new_post = Post(id=id, title=data['title'], image=data['image'], audio=data['audio'])
+        new_post = Post(id=id, title=data['title'], selftext=data['selftext'], image=data['image'], audio=data['audio'])
         session.add(new_post)
     else:
         if data['image'] is not None:  # Do we have an image? Else we can assume we have audio.
@@ -45,9 +46,24 @@ def populate_database(ch, method, properties, body) -> None:
         else:
             post.audio = data['audio']
 
+    if post['image'] is not None and post['audio'] is not None:
+        publish_complete_post(post)
+
     session.commit()
 
-# TODO: Post DB entries that are complete into a new queue for movie nodes to access.
+
+'''
+Publishes a completed post to the videoWorker queue for further processing by the videoWorker Node.
+The videoWorker node will attach the audio and the image into a video.
+'''
+def publish_complete_post(post: Post) -> None:
+    connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+    channel = connection.channel()
+
+    channel.queue_declare('videoWorker')
+
+    post = json.dumps(post)
+    channel.basic_publish(queue='videoWorker', exchange='', body=post)
 
 
 '''
