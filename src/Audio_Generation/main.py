@@ -3,6 +3,8 @@ from datetime import datetime
 import pika
 import json
 import time
+from src.Shared.queueCommunication import sendData
+from pydub import AudioSegment
 
 '''
 This code uses coqui-ai/TTS from github: https://github.com/coqui-ai/TTS
@@ -32,7 +34,13 @@ def generateAudio(ch, method, properties, body) -> None:
     ch.basic_ack(delivery_tag=method.delivery_tag)
 
     tts.tts_to_file(text=data['selftext'], file_path=file_name)
-    print(f"Done creating {file_name}")
+    print(f"Done creating {file_name}.")
+
+    # Extracting raw audio data from generated file and sending it to be stored in metadata db.
+    sound = AudioSegment.from_mp3(file_name)
+    raw_sound_data = sound.raw_data
+    sendData(q='metadataWorker', data=raw_sound_data, host='localhost')
+    print(f"Sent {file_name} to metadata DB.")
 
 
 '''

@@ -4,6 +4,7 @@ import pika
 import time
 import json
 from shared.artifacts import engine, session
+from src.Shared.queueCommunication import sendData
 
 
 '''
@@ -47,7 +48,7 @@ def populate_database(ch, method, properties, body) -> None:
             post.audio = data['audio']
 
     if post['image'] is not None and post['audio'] is not None:
-        publish_complete_post(post)
+        sendData(q='videoWorker', data=json.dumps(post), host='localhost')
 
     session.commit()
 

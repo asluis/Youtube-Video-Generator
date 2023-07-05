@@ -3,6 +3,7 @@ import pika
 import time
 import json
 from datetime import datetime
+from src.Shared.queueCommunication import sendData
 
 '''
 To make this program work, you have to have a local version of the Stable Diffusion repository.
@@ -26,6 +27,9 @@ def generateImage(ch, method, properties, body) -> None:
     print(f"File name is {file_name}")
 
     image.save(file_name)
+
+    sendData(q='metadataWorker', data=json.dumps(image), host='localhost')
+    print(f"Sent {file_name} to metadata DB.")
 
 
 '''
