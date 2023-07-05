@@ -63,7 +63,7 @@ def publish_complete_post(post: Post) -> None:
     channel.queue_declare('videoWorker')
 
     post = json.dumps(post)
-    channel.basic_publish(queue='videoWorker', exchange='', body=post)
+    channel.basic_publish(exchange='', routing_key='videoWorker', body=post)
 
 
 '''
