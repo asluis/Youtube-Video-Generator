@@ -3,4 +3,5 @@ from sqlalchemy.orm import sessionmaker
 
 # Username = metadata, password = root, database name = MetaData
 engine = create_engine('mysql://metadata:root@localhost/Metadata')
-session = sessionmaker(bind=engine)
+Session = sessionmaker(bind=engine)
+session = Session()

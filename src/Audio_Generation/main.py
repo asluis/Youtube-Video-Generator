@@ -3,7 +3,6 @@ from datetime import datetime
 import pika
 import json
 import time
-from src.Shared.queueCommunication import sendData
 from pydub import AudioSegment
 
 '''
@@ -38,9 +37,29 @@ def generateAudio(ch, method, properties, body) -> None:
 
     # Extracting raw audio data from generated file and sending it to be stored in metadata db.
     sound = AudioSegment.from_mp3(file_name)
-    raw_sound_data = sound.raw_data
-    sendData(q='metadataWorker', data=raw_sound_data, host='localhost')
+    raw_sound_data = sound.raw_data.decode('utf-8')
+
+    data['audio'] = raw_sound_data
+    data['image'] = None
+    data = json.dumps(data)
+    sendData(q='metadataWorker', data=data, host='localhost')
     print(f"Sent {file_name} to metadata DB.")
+
+
+'''
+Connects to a RabbitMQ channel and creates the binds to the imageWorker and audioWorker queues. Expects to 
+receive serialized data and sends to those channels.
+'''
+def sendData(q: str, data: bytes | str, host: str = "localhost") -> None:
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host))
+    channel = connection.channel()
+
+    channel.queue_declare(queue=q)
+
+    #  Serializing data into json format and sending thru q
+    channel.basic_publish(exchange='', routing_key=q, body=data)
+    #  Close conn.
+    connection.close()
 
 
 '''

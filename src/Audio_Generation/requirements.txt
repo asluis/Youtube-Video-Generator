@@ -1,3 +1,4 @@
 -i https://pypi.org/simple
 TTS==0.14.3
 pika==1.3.2
+pydub==0.25.1

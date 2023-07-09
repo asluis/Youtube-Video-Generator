@@ -1,9 +1,9 @@
+import base64
 from diffusers import DiffusionPipeline
 import pika
 import time
 import json
 from datetime import datetime
-from src.Shared.queueCommunication import sendData
 
 '''
 To make this program work, you have to have a local version of the Stable Diffusion repository.
@@ -28,8 +28,30 @@ def generateImage(ch, method, properties, body) -> None:
 
     image.save(file_name)
 
-    sendData(q='metadataWorker', data=json.dumps(image), host='localhost')
+    with open(f'{file_name}', mode="rb") as file:
+        img = file.read()
+    data['image'] = base64.encodebytes(img).decode('utf-8')
+    data['audio'] = None
+
+    data = json.dumps(data)
+    sendData(q='metadataWorker', data=data, host='localhost')
     print(f"Sent {file_name} to metadata DB.")
+
+
+'''
+Connects to a RabbitMQ channel and creates the binds to the imageWorker and audioWorker queues. Expects to 
+receive serialized data and sends to those channels.
+'''
+def sendData(q: str, data: bytes | str, host: str = "localhost") -> None:
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host))
+    channel = connection.channel()
+
+    channel.queue_declare(queue=q)
+
+    #  Serializing data into json format and sending thru q
+    channel.basic_publish(exchange='', routing_key=q, body=data)
+    #  Close conn.
+    connection.close()
 
 
 '''
