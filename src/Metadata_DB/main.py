@@ -58,6 +58,7 @@ def populate_database(ch, method, properties, body) -> None:
         video_data = post.__dict__
         del video_data['_sa_instance_state']
         sendData(q='videoWorker', data=json.dumps(video_data), host='localhost')
+        print(f"Sent post to video worker: {post_id}")
 
     session.commit()
     ch.basic_ack(delivery_tag=method.delivery_tag)
