@@ -36,7 +36,6 @@ def populate_database(ch, method, properties, body) -> None:
     post_id = data['url']
 
     post = get_post(post_id)
-    data['image'] = bytes(data['image'], 'utf-8')
 
     if post is None:
         new_post = Post(id=post_id, title=data['title'], selftext=data['selftext'], image=data['image'],
@@ -45,14 +44,20 @@ def populate_database(ch, method, properties, body) -> None:
         print(f"Processed post {post_id}")
     else:
         if data['image'] is not None:  # Do we have an image? Else we can assume we have audio.
+            # Bytes must have an encoding... yet it also has to be decoded into a string...
+            data['image'] = bytes(data['image'], 'utf-8').decode('utf-8')
             post.image = data['image']
             print(f"Processed image for post {post_id}")
-        else:
+        elif data['audio'] is not None:
+            # Bytes must have an encoding... yet it also has to be decoded into a string...
+            data['audio'] = bytes(data['audio'], 'utf-8').decode('utf-8')
             post.audio = data['audio']
             print(f"Processed audio for post {post_id}")
 
     if post is not None and post.image is not None and post.audio is not None:
-        sendData(q='videoWorker', data=json.dumps(post), host='localhost')
+        video_data = post.__dict__
+        del video_data['_sa_instance_state']
+        sendData(q='videoWorker', data=json.dumps(video_data), host='localhost')
 
     session.commit()
     ch.basic_ack(delivery_tag=method.delivery_tag)

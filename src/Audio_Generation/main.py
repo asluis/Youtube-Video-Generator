@@ -3,8 +3,7 @@ from datetime import datetime
 import pika
 import json
 import time
-from pydub import AudioSegment
-
+import base64
 '''
 This code uses coqui-ai/TTS from github: https://github.com/coqui-ai/TTS
 It has many models available that change how the voice sounds.
@@ -36,11 +35,11 @@ def generateAudio(ch, method, properties, body) -> None:
     print(f"Done creating {file_name}.")
 
     # Extracting raw audio data from generated file and sending it to be stored in metadata db.
-    sound = AudioSegment.from_mp3(file_name)
-    raw_sound_data = sound.raw_data.decode('utf-8')
-
-    data['audio'] = raw_sound_data
+    with open(f'{file_name}', mode="rb") as file:
+        audio = file.read()
+    data['audio'] = base64.encodebytes(audio).decode('utf-8')
     data['image'] = None
+
     data = json.dumps(data)
     sendData(q='metadataWorker', data=data, host='localhost')
     print(f"Sent {file_name} to metadata DB.")
