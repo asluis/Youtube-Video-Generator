@@ -4,6 +4,7 @@ from sqlalchemy.dialects.mysql import LONGTEXT
 import pika
 import json
 from shared.artifacts import engine, session
+import time
 
 
 '''
@@ -41,7 +42,7 @@ def populate_database(ch, method, properties, body) -> None:
         new_post = Post(id=post_id, title=data['title'], selftext=data['selftext'], image=data['image'],
                         audio=data['audio'])
         session.add(new_post)
-        print(f"Processed post {post_id}")
+        print(f"Processed post and initial data for {post_id}")
     else:
         if data['image'] is not None:  # Do we have an image? Else we can assume we have audio.
             # Bytes must have an encoding... yet it also has to be decoded into a string...
@@ -57,8 +58,9 @@ def populate_database(ch, method, properties, body) -> None:
     if post is not None and post.image is not None and post.audio is not None:
         video_data = post.__dict__
         del video_data['_sa_instance_state']
-        sendData(q='videoWorker', data=json.dumps(video_data), host='localhost')
-        print(f"Sent post to video worker: {post_id}")
+        data = json.dumps(data)
+        sendData(q='videoWorker', data=data, host='localhost')
+        print(f"Sent complete post to video worker: {post_id}")
 
     session.commit()
     ch.basic_ack(delivery_tag=method.delivery_tag)
@@ -75,23 +77,9 @@ def sendData(q: str, data: bytes | str, host: str = "localhost") -> None:
     channel.queue_declare(queue=q)
 
     #  Serializing data into json format and sending thru q
-    channel.basic_publish(exchange='', routing_key='q', body=data)
+    channel.basic_publish(exchange='', routing_key=q, body=data)
     #  Close conn.
     connection.close()
-
-
-'''
-Publishes a completed post to the videoWorker queue for further processing by the videoWorker Node.
-The videoWorker node will attach the audio and the image into a video.
-'''
-def publish_complete_post(post: Post) -> None:
-    connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
-    channel = connection.channel()
-
-    channel.queue_declare('videoWorker')
-
-    post = json.dumps(post)
-    channel.basic_publish(exchange='', routing_key='videoWorker', body=post)
 
 
 '''
@@ -115,7 +103,17 @@ def consume_messages():
     channel.basic_consume(queue='metadataWorker', on_message_callback=populate_database, auto_ack=False)
     print("Starting to consume...")
 
-    channel.start_consuming()
+    try:
+        channel.start_consuming()
+    except KeyboardInterrupt:
+        channel.stop_consuming()
+    except (Exception,):
+        # Connection was lost
+        # Attempt reconnection after a delay
+        print("Connection lost. Reconnecting...")
+        time.sleep(5)  # Delay before attempting reconnection
+        consume_messages()  # Recursively call the function to reconnect
+
     connection.close()
 
 
