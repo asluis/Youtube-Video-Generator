@@ -11,5 +11,5 @@ This is a very convoluted video generator that I created to learn about message 
 4) Uses a video editing library to create a video based on step 2 and 3 above
 5) Saves video to a local database
 
-Sample video generated with this can be seen (here)[https://www.youtube.com/shorts/bPet9PRHRqE]
+Sample video generated with this can be seen [here](https://www.youtube.com/shorts/bPet9PRHRqE)
 
