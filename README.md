@@ -1,6 +1,8 @@
 # Disclaimer
 This repo is being made public since I no longer plan on actively working on this. This was made from scratch while I was in university.
 
+Any future redevelopment of this will take place in a private repo.
+
 ### What is this?
 
 This is a very convoluted video generator that I created to learn about message queues and rabbitMQ. Essentially, it does as follows:
